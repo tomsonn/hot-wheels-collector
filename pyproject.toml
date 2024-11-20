@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "hot-wheels-collector"
+version = "0.1.0"
+description = ""
+authors = ["Tomáš Macko <tomik.macko@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.3"
+beautifulsoup4 = "^4.12.3"
+sqlmodel = "^0.0.22"
+uvicorn = {extras = ["standard"], version = "^0.32.0"}
+fastapi = {extras = ["standard"], version = "^0.115.5"}
+alembic = "^1.14.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
