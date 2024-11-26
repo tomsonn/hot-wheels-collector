@@ -1,10 +1,8 @@
-from ast import increment_lineno
 from datetime import datetime, UTC
-from email.policy import default
 from enum import Enum
-from typing import List
 from uuid import uuid4, UUID
 
+from pydantic import HttpUrl
 from sqlmodel import SQLModel, Field
 
 
@@ -31,7 +29,7 @@ class ModelCondition(str, Enum):
 class Series(SQLModel, table=True):
     __tablename__ = "series"
 
-    id: UUID = Field(default=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
     release_year: int | None
     description: str | None
@@ -40,12 +38,22 @@ class Series(SQLModel, table=True):
 class Models(SQLModel, table=True):
     __tablename__ = "models"
 
-    id: int = Field(primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    toy_no: str | None = Field(default=None, index=True)
+    collection_no: str | None
     name: str = Field(index=True)
     category: ModelCategory = Field(default=ModelCategory.car)
-    release_year: int | None
-    series_id: UUID | None = Field(default=None, foreign_key="series.id")
+    release_year: int | None = Field(index=True)
+    series_id: UUID = Field(foreign_key="series.id")
+    color: str | None = Field(index=True)
+    tampo: str | None = Field(index=True)
+    base_color_type: str | None
+    window_color: str | None
+    interior_color: str | None
+    wheel_type: str | None
+    country: str | None
     description: str | None
+    photo_url: str | None
 
 
 class UserModels(SQLModel, table=True):
@@ -53,7 +61,7 @@ class UserModels(SQLModel, table=True):
 
     id: int = Field(default=None, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id", index=True)
-    model_id: int = Field(foreign_key="models.id", index=True)
+    model_id: UUID = Field(foreign_key="models.id", index=True)
     notes: str | None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
     condition: ModelCondition = Field(default=ModelCondition.new, index=True)
