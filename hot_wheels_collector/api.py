@@ -2,9 +2,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from pydantic import PositiveInt
+
+from starlette.responses import JSONResponse
 from structlog.stdlib import BoundLogger
 
 from hot_wheels_collector.database.engine import Database
+from hot_wheels_collector.database.repository import HotWheelsRepository, HotWheelsRepositoryDependency
+from hot_wheels_collector.models.api import Model
 from hot_wheels_collector.settings.base import Settings
 from hot_wheels_collector.settings.logger import configure_logger
 
@@ -14,9 +19,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     logger = configure_logger()
     db = Database(settings)
+    hw_repository = HotWheelsRepository(db, logger)
 
     app.dependency_overrides[Settings] = lambda: settings
     app.dependency_overrides[Database] = lambda: db
+    app.dependency_overrides[HotWheelsRepository] = lambda: hw_repository
     app.dependency_overrides[BoundLogger] = lambda: logger
 
     yield
@@ -34,3 +41,12 @@ app = FastAPI(
 @app.get("/ping")
 def ping() -> dict:
     return {"ping": "pong"}
+
+
+@app.get("/model/{model_id}", response_model=Model, tags=["Hot Wheels"])
+async def get_model(model_id: PositiveInt, hw_repository: HotWheelsRepositoryDependency) -> Model | JSONResponse:
+    model = await hw_repository.get_model(model_id)
+    if not model:
+        return JSONResponse({"error": "not_found"}, 404)
+
+    return model
