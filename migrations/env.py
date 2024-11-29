@@ -1,6 +1,6 @@
 import os
 
-from hot_wheels_collector.database.models import *  # noqa: F403
+from hot_wheels_collector.database.schemas import *  # noqa: F403
 
 from logging.config import fileConfig
 
