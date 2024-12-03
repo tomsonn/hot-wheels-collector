@@ -1,8 +1,5 @@
-from ast import increment_lineno
 from datetime import datetime, UTC
-from email.policy import default
 from enum import Enum
-from typing import List
 from uuid import uuid4, UUID
 
 from sqlmodel import SQLModel, Field
@@ -29,42 +26,53 @@ class ModelCondition(str, Enum):
 
 
 class Series(SQLModel, table=True):
-    __tablename__ = "series"
+    __tablename__: str = "series"  # type: ignore
 
-    id: UUID = Field(default=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
     release_year: int | None
     description: str | None
 
 
 class Models(SQLModel, table=True):
-    __tablename__ = "models"
+    __tablename__: str = "models"  # type: ignore
 
-    id: int = Field(primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    toy_no: str | None = Field(default=None, index=True)
+    collection_no: str | None
     name: str = Field(index=True)
     category: ModelCategory = Field(default=ModelCategory.car)
-    release_year: int | None
-    series_id: UUID | None = Field(default=None, foreign_key="series.id")
+    release_year: int | None = Field(index=True)
+    series_id: UUID = Field(foreign_key="series.id")
+    color: str | None = Field(index=True)
+    tampo: str | None = Field(index=True)
+    base_color_type: str | None
+    window_color: str | None
+    interior_color: str | None
+    wheel_type: str | None
+    country: str | None
     description: str | None
+    photo_url: str | None
 
 
 class UserModels(SQLModel, table=True):
-    __tablename__ = "user_models"
+    __tablename__: str = "user_models"  # type: ignore
 
     id: int = Field(default=None, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id", index=True)
-    model_id: int = Field(foreign_key="models.id", index=True)
+    model_id: UUID = Field(foreign_key="models.id", index=True)
     notes: str | None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
     condition: ModelCondition = Field(default=ModelCondition.new, index=True)
     for_sale: bool
     for_change: bool
     price: float | None
 
 
-
 class User(SQLModel, table=True):
-    __tablename__ = "users"
+    __tablename__: str = "users"  # type: ignore
 
     id: UUID = Field(default=uuid4, primary_key=True)
     username: str = Field(index=True)
