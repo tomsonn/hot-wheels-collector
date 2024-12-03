@@ -2,7 +2,6 @@ from datetime import datetime, UTC
 from enum import Enum
 from uuid import uuid4, UUID
 
-from pydantic import HttpUrl
 from sqlmodel import SQLModel, Field
 
 
@@ -27,7 +26,7 @@ class ModelCondition(str, Enum):
 
 
 class Series(SQLModel, table=True):
-    __tablename__ = "series"
+    __tablename__: str = "series"  # type: ignore
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
@@ -36,7 +35,7 @@ class Series(SQLModel, table=True):
 
 
 class Models(SQLModel, table=True):
-    __tablename__ = "models"
+    __tablename__: str = "models"  # type: ignore
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     toy_no: str | None = Field(default=None, index=True)
@@ -57,22 +56,23 @@ class Models(SQLModel, table=True):
 
 
 class UserModels(SQLModel, table=True):
-    __tablename__ = "user_models"
+    __tablename__: str = "user_models"  # type: ignore
 
     id: int = Field(default=None, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id", index=True)
     model_id: UUID = Field(foreign_key="models.id", index=True)
     notes: str | None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC).replace(tzinfo=None)
+    )
     condition: ModelCondition = Field(default=ModelCondition.new, index=True)
     for_sale: bool
     for_change: bool
     price: float | None
 
 
-
 class User(SQLModel, table=True):
-    __tablename__ = "users"
+    __tablename__: str = "users"  # type: ignore
 
     id: UUID = Field(default=uuid4, primary_key=True)
     username: str = Field(index=True)

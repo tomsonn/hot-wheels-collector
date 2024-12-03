@@ -21,13 +21,18 @@ class HotWheelsRepository:
     # models
     async def get_model(self, model_id: UUID) -> Models | None:
         async with self.__db.acquire() as session:
-            return (await session.execute(select(Models).where(Models.id == model_id))).scalars().one_or_none()
-
+            return (
+                (await session.execute(select(Models).where(Models.id == model_id)))
+                .scalars()
+                .one_or_none()
+            )
 
     async def create_model(self, model_scraped: ScrapedHotWheelsModel) -> UUID:
-        if not (series := await self.get_series(
-            SeriesDetails(name=model_scraped.series_name)
-        )):
+        if not (
+            series := await self.get_series(
+                SeriesDetails(name=model_scraped.series_name)
+            )
+        ):
             raise NoResultFound("create_model.series_not_found")
 
         model_db = Models(
@@ -48,27 +53,34 @@ class HotWheelsRepository:
         if series_request.name:
             statement = statement.where(Series.name == series_request.name)
         if series_request.release_year:
-            statement = statement.where(Series.release_year == series_request.release_year)
+            statement = statement.where(
+                Series.release_year == series_request.release_year
+            )
 
         self.__logger.info("series request", series_req=series_request)
 
         async with self.__db.acquire() as session:
             try:
                 res = (await session.execute(statement)).scalars().one_or_none()
-                self.__logger.debug("get_series.success", series_id=res.id if res else None)
+                self.__logger.debug(
+                    "get_series.success", series_id=res.id if res else None
+                )
                 return res
             except MultipleResultsFound as e:
-                self.__logger.error("get_series.failed", error="Multiple series results were found", get_series_req=series_request.model_dump())
+                self.__logger.error(
+                    "get_series.failed",
+                    error="Multiple series results were found",
+                    get_series_req=series_request.model_dump(),
+                )
                 raise e
 
     # TODO - in case scraped model doesn't contain name of the series, create (or fetch) the default series, called "Unknown"
     async def create_series(self, series: CreateSeries) -> UUID:
         series_db = Series(**series.model_dump())
         get_series_req = SeriesDetails(
-            name=series.name,
-            release_year=series.release_year
+            name=series.name, release_year=series.release_year
         )
-        if await self.get_series(get_series_req):  # todo - inserting multiple series with the same name and release year is not working
+        if await self.get_series(get_series_req):
             raise SeriesAlreadyExistsError("create_series.series_already_exists")
 
         async with self.__db.acquire(commit=True) as session:
@@ -77,4 +89,6 @@ class HotWheelsRepository:
             return series_db.id
 
 
-HotWheelsRepositoryDependency = Annotated[HotWheelsRepository, Depends(HotWheelsRepository)]
+HotWheelsRepositoryDependency = Annotated[
+    HotWheelsRepository, Depends(HotWheelsRepository)
+]

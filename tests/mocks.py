@@ -1,3 +1,5 @@
+from pydantic import HttpUrl
+
 from hot_wheels_collector.database.schemas import ModelCategory
 from hot_wheels_collector.models.models import ScrapedHotWheelsModel
 from hot_wheels_collector.models.series import CreateSeries, SeriesDetails
@@ -26,6 +28,6 @@ MODEL_MOCK = ScrapedHotWheelsModel(
     wheel_type="69J",
     country="USA",
     description="The most expensive car in the world",
-    photo_url="https://definitely_a_photo_of_a_car.com",
+    photo_url=HttpUrl("https://definitely_a_photo_of_a_car.com"),
     series_name=SERIES_MOCK.name,
 )

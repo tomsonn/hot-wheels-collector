@@ -15,7 +15,9 @@ async def test_create_model(hw_repository: HotWheelsRepository) -> None:
 
 
 @pytest.mark.anyio
-async def test_create_model_series_not_exists(hw_repository: HotWheelsRepository) -> None:
+async def test_create_model_series_not_exists(
+    hw_repository: HotWheelsRepository,
+) -> None:
     with pytest.raises(NoResultFound):
         await hw_repository.create_model(MODEL_MOCK)
 
@@ -25,9 +27,7 @@ async def test_create_series(hw_repository: HotWheelsRepository) -> None:
     series_id = await hw_repository.create_series(SERIES_MOCK)
     assert series_id
 
-    series_db = await hw_repository.get_series(SeriesDetails(
-        id=series_id
-    ))
+    series_db = await hw_repository.get_series(SeriesDetails(id=series_id))
     assert series_db
     assert series_db.id == series_id
     assert series_db.name == SERIES_MOCK.name

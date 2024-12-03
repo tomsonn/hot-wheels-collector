@@ -4,15 +4,20 @@ from typing import Annotated
 
 import asyncpg
 from fastapi import Depends
-from google.cloud.sql.connector import create_async_connector
-from sqlalchemy.connectors import Connector
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine, AsyncSession
+from google.cloud.sql.connector import create_async_connector, Connector
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncEngine,
+    AsyncSession,
+)
 from structlog.stdlib import get_logger
 
 from hot_wheels_collector.settings.base import SettingsDependency
 from hot_wheels_collector.settings.database import DatabaseSettings
 
 logger = get_logger()
+
 
 class Database:
     def __init__(self, settings: SettingsDependency) -> None:
@@ -26,7 +31,11 @@ class Database:
             conn: asyncpg.Connection = await asyncpg.connect(str(settings.db_url))
             return conn
 
-        return create_async_engine("postgresql+asyncpg://", async_creator=getconn, **settings.pool_config.model_dump())
+        return create_async_engine(
+            "postgresql+asyncpg://",
+            async_creator=getconn,
+            **settings.pool_config.model_dump(),
+        )
 
     async def __get_connector(self) -> Connector:
         if self.__connector is None:

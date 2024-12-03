@@ -16,6 +16,7 @@ class SeriesDetails(BaseModel):
             raise GetSeriesQueryError("series_request.name_or_id")
         return values
 
+
 class GetSeriesResponse(BaseModel):
     id: UUID
     name: str

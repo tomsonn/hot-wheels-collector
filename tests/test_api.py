@@ -8,7 +8,9 @@ from tests.mocks import SERIES_MOCK, MODEL_MOCK, GET_SERIES_MOCK
 
 
 @pytest.mark.anyio
-async def test_get_model(hw_repository: HotWheelsRepository, client: AsyncClient) -> None:
+async def test_get_model(
+    hw_repository: HotWheelsRepository, client: AsyncClient
+) -> None:
     res = await client.get(f"/model/{uuid.uuid4()}")
     assert res.status_code == 404
 
@@ -26,11 +28,19 @@ async def test_get_model(hw_repository: HotWheelsRepository, client: AsyncClient
 
 
 @pytest.mark.anyio
-async def test_get_series(hw_repository: HotWheelsRepository, client: AsyncClient) -> None:
-    res = await client.get("/series", params={**GET_SERIES_MOCK.model_dump(exclude_none=True)})
+async def test_get_series(
+    hw_repository: HotWheelsRepository, client: AsyncClient
+) -> None:
+    res = await client.get(
+        "/series", params={**GET_SERIES_MOCK.model_dump(exclude_none=True)}
+    )
     assert res.status_code == 404
 
     series_id = await hw_repository.create_series(SERIES_MOCK)
-    res = await client.get("/series", params={**GET_SERIES_MOCK.model_dump(exclude_none=True), id: str(series_id)})
+    GET_SERIES_MOCK.id = series_id
+    res = await client.get(
+        "/series",
+        params={**GET_SERIES_MOCK.model_dump(exclude_none=True)},
+    )
     assert res.status_code == 200
     assert res.json()["name"] == GET_SERIES_MOCK.name
