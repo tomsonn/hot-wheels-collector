@@ -2,6 +2,7 @@ from datetime import datetime, UTC
 from enum import Enum
 from uuid import uuid4, UUID
 
+from pydantic import HttpUrl
 from sqlmodel import SQLModel, Field
 
 
@@ -28,7 +29,7 @@ class ModelCondition(str, Enum):
 class Series(SQLModel, table=True):
     __tablename__ = "series"
 
-    id: UUID = Field(default=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True)
     release_year: int | None
     description: str | None
@@ -37,8 +38,8 @@ class Series(SQLModel, table=True):
 class Models(SQLModel, table=True):
     __tablename__ = "models"
 
-    id: UUID = Field(default=uuid4, primary_key=True)
-    toy_no: str = Field(index=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    toy_no: str | None = Field(default=None, index=True)
     collection_no: str | None
     name: str = Field(index=True)
     category: ModelCategory = Field(default=ModelCategory.car)
