@@ -7,7 +7,9 @@ from pydantic import BaseModel, HttpUrl
 
 class HotWheelsModels(BaseModel):
     base_url: HttpUrl = HttpUrl("https://collecthw.com/find/years")
-    hw_models_config_path: str = str(Path(__file__).parent.parent / "scrapers/config.yaml")
+    hw_models_config_path: str = str(
+        Path(__file__).parent.parent / "scrapers/config.yaml"
+    )
 
     base_headers: dict[str, Any] = {
         "user-agent": UserAgent().chrome,

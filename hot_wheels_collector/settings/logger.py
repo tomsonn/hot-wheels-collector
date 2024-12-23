@@ -6,7 +6,7 @@ import structlog
 from fastapi import Depends
 from structlog.contextvars import merge_contextvars
 from structlog.stdlib import BoundLogger
-from structlog import get_logger
+from structlog import get_logger as get_struct_logger
 
 from hot_wheels_collector.settings.base import is_local_env
 
@@ -47,7 +47,11 @@ def configure_logger() -> BoundLogger:
     )
     logging.getLogger("requests").setLevel(logging.CRITICAL)
 
-    return get_logger()
+    return get_struct_logger()
+
+
+def get_logger() -> BoundLogger:
+    return get_struct_logger()
 
 
 LoggerDependency = Annotated[BoundLogger, Depends(get_logger)]
