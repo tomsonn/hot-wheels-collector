@@ -1,15 +1,15 @@
+from collections.abc import Sequence
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy.exc import NoResultFound
 from sqlmodel import select
 
 from hot_wheels_collector.database.engine import DatabaseDependency
 from hot_wheels_collector.database.schemas import Models, Series
 from hot_wheels_collector.errors import SeriesAlreadyExistsError
-from hot_wheels_collector.models.models import ScrapedHotWheelsModel
-from hot_wheels_collector.models.series import CreateSeries, SeriesDetails
+from hot_wheels_collector.models.models import HWModel
+from hot_wheels_collector.models.series import SeriesBase, HWSeries
 from hot_wheels_collector.settings.logger import LoggerDependency
 
 
@@ -19,7 +19,7 @@ class HotWheelsRepository:
         self.__logger = logger
 
     # models
-    async def get_model(self, model_id: UUID) -> Models | None:
+    async def get_model(self, model_id: str) -> Models | None:
         async with self.__db.acquire() as session:
             return (
                 (await session.execute(select(Models).where(Models.id == model_id)))
@@ -27,29 +27,39 @@ class HotWheelsRepository:
                 .one_or_none()
             )
 
-    async def create_model(self, model_scraped: ScrapedHotWheelsModel) -> UUID:
-        if not (
-            series := await self.get_series(
-                SeriesDetails(name=model_scraped.series_name)
+    async def create_model(self, model_scraped: HWModel, series: HWSeries) -> str:
+        model_scraped_copy = model_scraped.model_copy()
+        model_id = model_scraped_copy.compute_hash({"image_url"})
+        if await self.get_model(model_id):
+            self.__logger.warning(
+                "create_model.model_already_exists", model_id=model_id
             )
-        ):
+            return model_id
+
+        series_id = series.compute_hash({"description"})
+        if not (_ := await self.get_series_by_id(series_id)):
             raise NoResultFound("create_model.series_not_found")
 
         model_db = Models(
-            series_id=series.id,
-            photo_url=str(model_scraped.photo_url),
-            **model_scraped.model_dump(exclude={"series_name", "photo_url"}),
+            id=model_id, series_id=series_id, **model_scraped_copy.model_dump()
         )
+        self.__logger.debug("create_model", model_id=model_id)
         async with self.__db.acquire(commit=True) as session:
             session.add(model_db)
             self.__logger.debug("model_created.success", model_id=model_db.id)
             return model_db.id
 
     # series
-    async def get_series(self, series_request: SeriesDetails) -> Series | None:
-        statement = select(Series)
-        if series_request.id:
-            statement = statement.where(Series.id == series_request.id)
+    async def get_series_by_id(self, series_id: str) -> Series | None:
+        async with self.__db.acquire() as session:
+            return (
+                (await session.execute(select(Series).where(Series.id == series_id)))
+                .scalars()
+                .one_or_none()
+            )
+
+    async def get_series_by_query(self, series_request: SeriesBase) -> Sequence[Series]:
+        statement = select(Series).where(Series.category == series_request.category)
         if series_request.name:
             statement = statement.where(Series.name == series_request.name)
         if series_request.release_year:
@@ -57,30 +67,13 @@ class HotWheelsRepository:
                 Series.release_year == series_request.release_year
             )
 
-        self.__logger.info("series request", series_req=series_request)
-
         async with self.__db.acquire() as session:
-            try:
-                res = (await session.execute(statement)).scalars().one_or_none()
-                self.__logger.debug(
-                    "get_series.success", series_id=res.id if res else None
-                )
-                return res
-            except MultipleResultsFound as e:
-                self.__logger.error(
-                    "get_series.failed",
-                    error="Multiple series results were found",
-                    get_series_req=series_request.model_dump(),
-                )
-                raise e
+            return (await session.execute(statement)).scalars().all()
 
-    # TODO - in case scraped model doesn't contain name of the series, create (or fetch) the default series, called "Unknown"
-    async def create_series(self, series: CreateSeries) -> UUID:
-        series_db = Series(**series.model_dump())
-        get_series_req = SeriesDetails(
-            name=series.name, release_year=series.release_year
-        )
-        if await self.get_series(get_series_req):
+    async def create_series(self, series: HWSeries) -> str:
+        series_id = series.compute_hash({"description"})
+        series_db = Series(**series.model_dump(), id=series_id)
+        if await self.get_series_by_id(series_id):
             raise SeriesAlreadyExistsError("create_series.series_already_exists")
 
         async with self.__db.acquire(commit=True) as session:

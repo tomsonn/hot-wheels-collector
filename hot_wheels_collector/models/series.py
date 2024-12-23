@@ -1,31 +1,14 @@
-from uuid import UUID
-
-from pydantic import BaseModel, model_validator
-
-from hot_wheels_collector.errors import GetSeriesQueryError
+from hot_wheels_collector.models.base import BaseHashableModel
 
 
-class SeriesDetails(BaseModel):
+class SeriesBase(BaseHashableModel):
+    category: str
     name: str | None = None
-    id: UUID | None = None
     release_year: int | None = None
 
-    @model_validator(mode="after")
-    def name_or_id(cls, values):
-        if not any([values.name, values.id]):
-            raise GetSeriesQueryError("series_request.name_or_id")
-        return values
 
-
-class GetSeriesResponse(BaseModel):
-    id: UUID
-    name: str
-    release_year: int | None = None
-    description: str | None = None
-    # TODO: add models: list[HotWheelsModelResponse] = []
-
-
-class CreateSeries(BaseModel):
-    name: str
+class HWSeries(BaseHashableModel):
+    category: str
+    name: str | None = None
     release_year: int | None = None
     description: str | None = None
