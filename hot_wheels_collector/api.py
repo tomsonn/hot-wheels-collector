@@ -1,7 +1,6 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import FastAPI, Depends, Request
 
@@ -14,26 +13,28 @@ from hot_wheels_collector.database.repository import (
     HotWheelsRepositoryDependency,
 )
 from hot_wheels_collector.database.schemas import Models, Series
+from hot_wheels_collector.deps import create_deps
 from hot_wheels_collector.errors import GetSeriesQueryError
-from hot_wheels_collector.models.series import SeriesDetails
+from hot_wheels_collector.models.api import FilteredSeriesResponse
+from hot_wheels_collector.models.series import (
+    SeriesBase,
+    HWSeries,
+)
 from hot_wheels_collector.settings.base import Settings
-from hot_wheels_collector.settings.logger import configure_logger, get_logger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    settings = Settings()  # type: ignore
-    logger = configure_logger()
-    db = Database(settings)
-    hw_repository = HotWheelsRepository(db, logger)
+    dependencies = create_deps()
+    database = dependencies.db
 
-    app.dependency_overrides[Settings] = lambda: settings
-    app.dependency_overrides[Database] = lambda: db
-    app.dependency_overrides[HotWheelsRepository] = lambda: hw_repository
-    app.dependency_overrides[BoundLogger] = lambda: logger
+    app.dependency_overrides[Settings] = lambda: dependencies.settings
+    app.dependency_overrides[Database] = lambda: database
+    app.dependency_overrides[HotWheelsRepository] = lambda: dependencies.hw_repository
+    app.dependency_overrides[BoundLogger] = lambda: dependencies.logger
 
     yield
-    await db.aclose()
+    await database.aclose()
 
 
 app = FastAPI(
@@ -52,10 +53,8 @@ def ping() -> dict:
 
 @app.get("/model/{model_id}", response_model=Models, tags=["Hot Wheels"])
 async def get_model(
-    model_id: UUID, repository: HotWheelsRepositoryDependency
+    model_id: str, repository: HotWheelsRepositoryDependency
 ) -> Models | JSONResponse:
-    logger = get_logger()
-    logger.info("model id in api", model_id=model_id)
     model = await repository.get_model(model_id)
     if not model:
         return JSONResponse({"error": "not_found"}, 404)
@@ -70,13 +69,26 @@ def handle_get_series_query_error(
     return JSONResponse({"error": "invalid_query", "msg": str(exc)}, 400)
 
 
-@app.get("/series", response_model=Series, tags=["Hot Wheels"])
+@app.get("/series/{series_id}", response_model=Series, tags=["Hot Wheels"])
 async def get_series(
-    repository: HotWheelsRepositoryDependency,
-    query: Annotated[SeriesDetails, Depends()],
+    series_id: str, repository: HotWheelsRepositoryDependency
 ) -> Series | JSONResponse:
-    series = await repository.get_series(query)
+    series = await repository.get_series_by_id(series_id)
     if not series:
         return JSONResponse({"error": "not_found"}, 404)
 
     return series
+
+
+@app.get("/series", response_model=Series, tags=["Hot Wheels"])
+async def filter_series(
+    repository: HotWheelsRepositoryDependency,
+    query: Annotated[SeriesBase, Depends()],
+) -> FilteredSeriesResponse | JSONResponse:
+    series = await repository.get_series_by_query(query)
+    if not series:
+        return JSONResponse({"error": "not_found"}, 404)
+
+    return FilteredSeriesResponse(
+        series=[HWSeries.model_validate(s.model_dump()) for s in series]
+    )

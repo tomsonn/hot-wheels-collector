@@ -635,6 +635,17 @@ dnspython = ">=2.0.0"
 idna = ">=2.0.0"
 
 [[package]]
+name = "fake-useragent"
+version = "2.0.3"
+description = "Up-to-date simple useragent faker with real world database"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "fake_useragent-2.0.3-py3-none-any.whl", hash = "sha256:8bae50abb72c309a5b3ae2f01a0b82426613fd5c4e2a04dca9332399ec44daa1"},
+    {file = "fake_useragent-2.0.3.tar.gz", hash = "sha256:af86a26ef8229efece8fed529b4aeb5b73747d889b60f01cd477b6f301df46e6"},
+]
+
+[[package]]
 name = "fastapi"
 version = "0.115.5"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
@@ -2366,4 +2377,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "5fa2ae16051bd4df3b5ee6792f2d152cd89713fda20724cb217c12a3acb4e49b"
+content-hash = "086f09559e80ac1588e0a8a14505edc203cc72293694abc43c32263fb6c78220"
