@@ -1,16 +1,16 @@
 from structlog.stdlib import BoundLogger
 
-from hot_wheels_collector.database.engine import Database
-from hot_wheels_collector.database.repository import HotWheelsRepository
-from hot_wheels_collector.settings.base import Settings
-from hot_wheels_collector.settings.logger import configure_logger
+from hot_wheels_collector.database.engine import Database, get_db
+from hot_wheels_collector.database.repository import HotWheelsRepository, get_repository
+from hot_wheels_collector.settings.base import Settings, get_settings
+from hot_wheels_collector.settings.logger import get_logger
 
 
 class DependencyRegistry:
-    settings: Settings = Settings()  # type: ignore
-    logger: BoundLogger = configure_logger()
-    db: Database = Database(settings)
-    hw_repository: HotWheelsRepository = HotWheelsRepository(db, logger)
+    settings: Settings = get_settings()  # type: ignore
+    logger: BoundLogger = get_logger()
+    db: Database = get_db()
+    hw_repository: HotWheelsRepository = get_repository(db, logger)
 
 
 def create_deps() -> DependencyRegistry:

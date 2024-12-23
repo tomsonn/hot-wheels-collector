@@ -13,14 +13,14 @@ from sqlalchemy.ext.asyncio import (
 )
 from structlog.stdlib import get_logger
 
-from hot_wheels_collector.settings.base import SettingsDependency
+from hot_wheels_collector.settings.base import get_settings, Settings
 from hot_wheels_collector.settings.database import DatabaseSettings
 
 logger = get_logger()
 
 
 class Database:
-    def __init__(self, settings: SettingsDependency) -> None:
+    def __init__(self, settings: Annotated[Settings, get_settings()]) -> None:
         self.__settings = settings.db
         self.__connector: Connector | None = None
         self.__engine = self.create_engine(self.__settings)
@@ -53,4 +53,8 @@ class Database:
                 await session.commit()
 
 
-DatabaseDependency = Annotated[Database, Depends(Database)]
+def get_db() -> Database:
+    return Database(get_settings())
+
+
+DatabaseDependency = Annotated[Database, Depends(get_db)]

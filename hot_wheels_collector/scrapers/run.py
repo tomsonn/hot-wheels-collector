@@ -13,7 +13,9 @@ if __name__ == "__main__":
 
     try:
         logger.info("scraper.start")
-        hot_wheels_scraper = HotWheelsModels(dependencies.hw_repository, dependencies.logger, dependencies.settings)
+        hot_wheels_scraper = HotWheelsModels(
+            dependencies.hw_repository, dependencies.logger, dependencies.settings
+        )
         asyncio.get_event_loop().run_until_complete(hot_wheels_scraper.run())
 
         logger.info("scraper.success")

@@ -4,8 +4,9 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.exc import NoResultFound
 from sqlmodel import select
+from structlog.stdlib import BoundLogger
 
-from hot_wheels_collector.database.engine import DatabaseDependency
+from hot_wheels_collector.database.engine import DatabaseDependency, Database
 from hot_wheels_collector.database.schemas import Models, Series
 from hot_wheels_collector.errors import SeriesAlreadyExistsError
 from hot_wheels_collector.models.models import HWModel
@@ -80,6 +81,10 @@ class HotWheelsRepository:
             session.add(series_db)
             self.__logger.debug("series_created.success", series_id=series_db.id)
             return series_db.id
+
+
+def get_repository(db: Database, logger: BoundLogger) -> HotWheelsRepository:
+    return HotWheelsRepository(db, logger)
 
 
 HotWheelsRepositoryDependency = Annotated[
